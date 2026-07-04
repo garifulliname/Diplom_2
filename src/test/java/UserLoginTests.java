@@ -4,6 +4,7 @@ import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,13 +18,18 @@ public class UserLoginTests {
     private List<String> tokensToDelete = new ArrayList<>();
     private String testEmail;
     private String testPassword;
+    private ApiClient apiClient;
+
+    @Before
+    public void setUp() {
+        apiClient = new ApiClient(TestData.BASE_URI);
+    }
 
     @After
     public void tearDown() {
         for (String token : tokensToDelete) {
             if (token != null) {
                 try {
-                    ApiClient apiClient = new ApiClient(TestData.BASE_URI);
                     apiClient.deleteUser(token);
                 } catch (Exception e) {
                     System.out.println("Не удалось удалить пользователя: " + e.getMessage());
@@ -35,10 +41,8 @@ public class UserLoginTests {
 
     @Test
     @Story("Успешный вход под существующим пользователем")
-    @DisplayName("Успешная авторизация (200)")
+    @DisplayName("Успешная авторизация")
     public void testLoginSuccess() {
-        ApiClient apiClient = new ApiClient(TestData.BASE_URI);
-
         testEmail = TestData.generateUniqueEmail();
         testPassword = TestData.generatePassword();
         String name = TestData.generateUniqueName();
@@ -58,10 +62,8 @@ public class UserLoginTests {
 
     @Test
     @Story("Вход с неверным паролем")
-    @DisplayName("Авторизация с неверным паролем (401)")
+    @DisplayName("Авторизация с неверным паролем")
     public void testLoginInvalidPassword() {
-        ApiClient apiClient = new ApiClient(TestData.BASE_URI);
-
         testEmail = TestData.generateUniqueEmail();
         testPassword = TestData.generatePassword();
         String name = TestData.generateUniqueName();
@@ -77,11 +79,24 @@ public class UserLoginTests {
     }
 
     @Test
-    @Story("Вход без пароля")
-    @DisplayName("Авторизация без пароля (401)")
-    public void testLoginWithoutPassword() {
-        ApiClient apiClient = new ApiClient(TestData.BASE_URI);
+    @Story("Вход с неверным логином")
+    @DisplayName("Авторизация с неверным логином (401)")
+    public void testLoginInvalidLogin() {
+        String invalidEmail = "nonexistent@user.com";
+        String password = TestData.generatePassword();
 
+        Response loginResponse = apiClient.loginUser(invalidEmail, password);
+
+        loginResponse.then()
+                .statusCode(HttpStatus.SC_UNAUTHORIZED)
+                .body("success", is(false))
+                .body("message", containsString("incorrect"));
+    }
+
+    @Test
+    @Story("Вход без пароля")
+    @DisplayName("Авторизация без пароля")
+    public void testLoginWithoutPassword() {
         testEmail = TestData.generateUniqueEmail();
         testPassword = TestData.generatePassword();
         String name = TestData.generateUniqueName();
