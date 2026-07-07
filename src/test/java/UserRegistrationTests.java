@@ -83,10 +83,10 @@ public class UserRegistrationTests {
     }
 
     @Test
-    @Story("Регистрация без обязательных полей")
+    @Story("Регистрация без name")
     @DisplayName("Регистрация без поля name")
     @Description("Отправляем запрос без поля name.")
-    public void testRegisterMissingFields() {
+    public void testRegisterMissingName() {
         String email = TestData.generateUniqueEmail();
         String password = TestData.generatePassword();
 
@@ -95,6 +95,46 @@ public class UserRegistrationTests {
         userRequest.setPassword(password);
 
         Response response = apiClient.registerUser(email, password, null);
+
+        response.then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+                .body("success", is(false))
+                .body("message", containsString("required fields"));
+    }
+
+    @Test
+    @Story("Регистрация без email")
+    @DisplayName("Регистрация без поля email")
+    @Description("Отправляем запрос без поля email.")
+    public void testRegisterMissingEmail() {
+        String name = TestData.generateUniqueName();
+        String password = TestData.generatePassword();
+
+        UserRequest userRequest = new UserRequest();
+        userRequest.setPassword(password);
+        userRequest.setName(name);
+
+        Response response = apiClient.registerUser(null, password, name);
+
+        response.then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+                .body("success", is(false))
+                .body("message", containsString("required fields"));
+    }
+
+    @Test
+    @Story("Регистрация без password")
+    @DisplayName("Регистрация без поля password")
+    @Description("Отправляем запрос без поля password.")
+    public void testRegisterMissingPassword() {
+        String email = TestData.generateUniqueEmail();
+        String name = TestData.generateUniqueName();
+
+        UserRequest userRequest = new UserRequest();
+        userRequest.setEmail(email);
+        userRequest.setName(name);
+
+        Response response = apiClient.registerUser(email, null, name);
 
         response.then()
                 .statusCode(HttpStatus.SC_FORBIDDEN)
